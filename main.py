@@ -104,13 +104,74 @@ def recent():
     return {"total": len(recent_matches) , "recent_matches": recent_matches}
 
 
+@app.get("/standings")
+def standings():
+
+    url = "https://cricbuzz-cricket.p.rapidapi.com/stats/v1/series/9241/points-table"            
+    headers = {"x-rapidapi-key": "68ea60a1fdmshc7b501fac7d21d8p126958jsnc0ca635fdc0d"}
+    response = requests.get(url,headers = headers)
+    data = response.json()
+    teams = []
+
+    for i in data.get("pointsTable",[]):
+        for a in i.get("pointsTableInfo",[]):
+            teams.append({
+                "team": a.get("teamName",""),
+                "fullname": a.get("teamFullName",""),
+                "played":a.get("matchesPlayed"),
+                "won": a.get("matchesWon"),
+                "points":a.get("points"),
+                "nrr":a.get("nrr"),
+                "win_pct": round(a.get("matchesWon", 0) / a.get("matchesPlayed", 1) * 100, 1)
+            })
+
+    return {"standings":teams}
+
+@app.get("/predict")
+def prediction(team1: str, team2: str):
+
+    url = "https://cricbuzz-cricket.p.rapidapi.com/stats/v1/series/9241/points-table"            
+    headers = {"x-rapidapi-key": "68ea60a1fdmshc7b501fac7d21d8p126958jsnc0ca635fdc0d"}
+    response = requests.get(url,headers = headers)
+    data = response.json()
+
+    team1_pct = 0
+    team2_pct = 0
+
+    for i in data.get("pointsTable", []):
+        for a in i.get("pointsTableInfo", []):
+            name = a.get("teamName", "")
+            pct = round(a.get("matchesWon", 0) / a.get("matchesPlayed", 1) * 100, 1)
+            if name == team1:
+                team1_pct = pct
+            if name == team2:
+                team2_pct = pct
+
+
+    confidence = 0
+    winner = "NA"
+    if(team1_pct>team2_pct):
+        confidence = round(team1_pct-team2_pct,1)
+        winner = team1
+    else:
+        confidence = round(team2_pct-team1_pct,1)
+        winner = team2
+
+    return {
+        "team1": team1,
+        "team2": team2,
+        "team1_win_pct": team1_pct,
+        "team2_win_pct": team2_pct,
+        "predicted_winner": winner,
+        "confidence": f"{confidence}% edge"
+    }
+
+
+    
 
 
 
-    return 
-            
-
-
+    
 
     
 
